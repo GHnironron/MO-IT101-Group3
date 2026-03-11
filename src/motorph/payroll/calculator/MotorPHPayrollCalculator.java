@@ -188,7 +188,7 @@ public class MotorPHPayrollCalculator {
     }
     
     public static String[] findEmployeeID() {
-        
+        return null;
     }
     
     
@@ -208,10 +208,11 @@ public class MotorPHPayrollCalculator {
         String fullName = firstName + ", " + lastName;
 
 
+// == HOURS & GROSS PAY CALCULATION == //
         
 // -Hours Worked Calculation- //
     public static double calculateHoursWorked(LocalTime timeIn, LocalTime timeOut){    
-    // Create LocalTime variables for employee login and logout
+    // Create LocalTime variables for employee login and logout (applies 8AM-5PM rule)
         LocalTime login = LocalTime.of(8, 0);
         LocalTime logout = LocalTime.of(17, 0);
     
@@ -231,10 +232,12 @@ public class MotorPHPayrollCalculator {
     }
 
 // -Gross Pay Calculation- //
-
-    // Hourly rate given in CSV file
-        double hourlyRate = 535.71;
+    public static double calculateGrossPay(double hours, double rate) {
+    // Gross Pay according to hours worked
+        return hours * rate;        
+    }
     
+    public static double computeGrossPay(String empNo, int month, boolean first) {
     // Converts total hours and minutes worked into decimal hours
         double totalHoursWorked = hours + (minutes/60);
     
@@ -243,14 +246,18 @@ public class MotorPHPayrollCalculator {
             System.out.println ("Invalid hours worked/hourly rate input.");
         } else {
             double grossPay = totalHoursWorked * hourlyRate;    // Computes gross pay if input is valid
-        
-    // Displays results
-        System.out.println("\n--Gross Pay Calculation--");
-        System.out.println("Total Hours Worked: " + totalHoursWorked);
-        System.out.println("Hourly Rate: PHP" + hourlyRate);
-        System.out.println("Total Gross Pay (Cut-off): PHP" + grossPay);
+                
+    }
+    // Converts total hours and minutes worked into decimal hours
+        double totalHoursWorked = hours + (minutes/60);
+    
+    // Conditional statement that validates hours and rate input
+        if (totalHoursWorked <= 0 || hourlyRate <= 0) {
+            System.out.println ("Invalid hours worked/hourly rate input.");
+        } else {
+            double grossPay = totalHoursWorked * hourlyRate;    // Computes gross pay if input is valid
         }
-
+    }
             
 // -Net Pay Calculation- //        
         
@@ -274,7 +281,8 @@ public class MotorPHPayrollCalculator {
         double netPay = monthlyBasicSalary - totalDeductions;
     
     // Method that calculates SSS deductions    
-    public static double calculateSSS(double monthlyBasicSalary) {
+    
+public static double calculateSSS(double monthlyBasicSalary) {
 
     // List all SSS compensation ranges (upper limits)
         double[] compRange = {
