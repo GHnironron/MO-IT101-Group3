@@ -272,17 +272,6 @@ public class MotorPHPayrollCalculator {
         // Sums up all deductions and subtracts it on gross pay (or basic salary for now)
         double totalDeductions = sssDeduction + philHealthDeduction + pagIbigDeduction + withholdingTax;
         double netPay = monthlyBasicSalary - totalDeductions;
-
-        // Displays all deduction results
-        System.out.println("\n--Net Pay Calculation--");
-        System.out.println("Basic Salary: " + monthlyBasicSalary);
-        System.out.println("SSS Deduction: " + sssDeduction);
-        System.out.println("PhilHealth Deduction: " + philHealthDeduction);
-        System.out.println("Pag-IBIG Deduction: " + pagIbigDeduction);
-        System.out.println("Taxable Income: " + taxableIncomeComputed);
-        System.out.println("Withholding Tax: " + withholdingTax);
-        System.out.println("Deductions: " + totalDeductions);
-        System.out.println("Total Net Pay: " + netPay);   
     
     // Method that calculates SSS deductions    
     public static double calculateSSS(double monthlyBasicSalary) {
