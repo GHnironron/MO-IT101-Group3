@@ -237,20 +237,27 @@ public class MotorPHPayrollCalculator {
         return hours * rate;        
     }
     
-    public static double computeGrossPay(String empNo, int month, boolean firstCutOff, double rate) {
+    public static double computeGrossPay(String empNo, int month, boolean first) {
     // Converts total hours and minutes worked into decimal hours
-        double [] cutOffs = readEmployeeAttendance(empNo, month);
-        
-        double hours;
-        if (firstCutOff) {
-            hours = cutOffs[0];
-        } else {
-            hours = cutOffs[1];
-        }
+        double totalHoursWorked = hours + (minutes/60);
     
-        return calculateGrossPay(hours, rate);
+    // Conditional statement that validates hours and rate input
+        if (totalHoursWorked <= 0 || hourlyRate <= 0) {
+            System.out.println ("Invalid hours worked/hourly rate input.");
+        } else {
+            double grossPay = totalHoursWorked * hourlyRate;    // Computes gross pay if input is valid
+                
     }
-
+    // Converts total hours and minutes worked into decimal hours
+        double totalHoursWorked = hours + (minutes/60);
+    
+    // Conditional statement that validates hours and rate input
+        if (totalHoursWorked <= 0 || hourlyRate <= 0) {
+            System.out.println ("Invalid hours worked/hourly rate input.");
+        } else {
+            double grossPay = totalHoursWorked * hourlyRate;    // Computes gross pay if input is valid
+        }
+    }
             
 // -Net Pay Calculation- //        
         
