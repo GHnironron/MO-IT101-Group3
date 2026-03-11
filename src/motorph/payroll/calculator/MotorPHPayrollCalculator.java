@@ -42,14 +42,14 @@ public class MotorPHPayrollCalculator {
             System.out.print("Enter employee number: ");
             String empNum = empMenu.nextLine();
             
-            String [] emp = findEmployeeID(empNum);
+            String [] emp = readEmployeeDetails(empNum);
             
             if (emp == null) {
                 System.out.println("Invalid employee number.");
                 return;
             }
             
-            System.out.println("\n Employee Number: " + emp[0]);
+            System.out.println("\nEmployee Number: " + emp[0]);
             System.out.println("Employee Name: " + emp[1] + " " + emp [2]);
             System.out.println("Birthday: " + emp[3]);
         } else {
@@ -76,7 +76,8 @@ public class MotorPHPayrollCalculator {
     
     public static String userLogin(Scanner login) {
         
-        System.out.print("Enter username: ");
+        System.out.println("Welcome to MotorPH Portal!");
+        System.out.print("Enter username (employee/payroll_staff): ");
         String username = login.nextLine();
         
         System.out.print("Enter password: ");
@@ -186,30 +187,11 @@ public class MotorPHPayrollCalculator {
             System.out.println("Error reading attendance file: " + month);
         }
     }
-    
-    public static String[] findEmployeeID() {
-        return null;
-    }
-    
-    
-    
 
-// -Employee Info Presentation- //
     
-    // Stores basic employee name and birthday (mm/dd/yyyy)
-        String firstName = "Manuel III";
-        String lastName = "Garcia";
-        String birthDay = "10/11/1983";
-    
-    // Unique employee identifier
-        String employeeID = "10001";
-        
-    // Combines first and last name for display
-        String fullName = firstName + ", " + lastName;
-
-
 // == HOURS, GROSS, & NET PAY CALCULATION == //
         
+    
 // -Hours Worked Calculation- //
     public static double calculateHoursWorked(LocalTime timeIn, LocalTime timeOut){    
     // Create LocalTime variables for employee login and logout (applies 8AM-5PM rule)
@@ -275,9 +257,11 @@ public class MotorPHPayrollCalculator {
         return new double[] {netPay, totalDeductions, sss, philHealth, pagIbig, withholdingTax};
     }    
 
+    
 // == GOVERNMENT DEDUCTIONS == //   
     
-    // Method that calculates SSS deductions    
+    
+// -SSS Deduction- //  
     public static double calculateSSS(double monthlyBasicSalary) {
 
     // List all SSS compensation ranges (upper limits)
@@ -311,7 +295,7 @@ public class MotorPHPayrollCalculator {
         return 1125.00;
   }
     
-    // Method that calculates PhilHealth contribution
+// -PhilHealth Contribution- //
     public static double calculatePHCont(double monthlyBasicSalary) {
        
     // Multiplies basic salary to premium rate (3%)
@@ -330,7 +314,7 @@ public class MotorPHPayrollCalculator {
        return empShare;
    }
     
-    // Method that calculates Pag-IBIG deductions
+// -PagIbig Deduction- //
     public static double calculatePagIbig(double monthlyBasicSalary) {
         
         // Add Pag-IBIG rate variable for calculation
@@ -355,7 +339,7 @@ public class MotorPHPayrollCalculator {
         return pagIbigCont;
     }
     
-    // Method that calculates Withholding Tax
+// -Withholding Tax Deduction- //
     public static double calculateWithholdingTax(double taxableIncome) {
         
         // Add withholding tax variable for calculation
