@@ -208,7 +208,7 @@ public class MotorPHPayrollCalculator {
         String fullName = firstName + ", " + lastName;
 
 
-// == HOURS & GROSS PAY CALCULATION == //
+// == HOURS, GROSS, & NET PAY CALCULATION == //
         
 // -Hours Worked Calculation- //
     public static double calculateHoursWorked(LocalTime timeIn, LocalTime timeOut){    
@@ -233,56 +233,52 @@ public class MotorPHPayrollCalculator {
 
 // -Gross Pay Calculation- //
     public static double calculateGrossPay(double hours, double rate) {
+    
     // Gross Pay according to hours worked
         return hours * rate;        
     }
     
-    public static double computeGrossPay(String empNo, int month, boolean first) {
-    // Converts total hours and minutes worked into decimal hours
-        double totalHoursWorked = hours + (minutes/60);
-    
-    // Conditional statement that validates hours and rate input
-        if (totalHoursWorked <= 0 || hourlyRate <= 0) {
-            System.out.println ("Invalid hours worked/hourly rate input.");
-        } else {
-            double grossPay = totalHoursWorked * hourlyRate;    // Computes gross pay if input is valid
-                
-    }
-    // Converts total hours and minutes worked into decimal hours
-        double totalHoursWorked = hours + (minutes/60);
-    
-    // Conditional statement that validates hours and rate input
-        if (totalHoursWorked <= 0 || hourlyRate <= 0) {
-            System.out.println ("Invalid hours worked/hourly rate input.");
-        } else {
-            double grossPay = totalHoursWorked * hourlyRate;    // Computes gross pay if input is valid
-        }
-    }
-            
-// -Net Pay Calculation- //        
+    public static double computeGrossPay(String empNo, int month, boolean firstCutOff, double rate) {
+    // Reads attendance hours for selected cutoffs
+        double [] cutOffs = readEmployeeAttendance(empNo, month);
         
-        double monthlyBasicSalary = 25000.00;   // Sample gross pay (for now)
-        double taxableIncome = 23400.00;        // Sample taxable income (for now)
+        double hours;
+        if (firstCutOff) {
+            hours = cutOffs[0];     // Total Hours for 1-15 cutoff
+        } else {
+            hours = cutOffs[1];     // Total Hours for 16-end of cutoff
+        }
+        return calculateGrossPay(hours, rate);
+    }
+
+// -Net Pay Calculation- //        
+    public static double[] computeNetPay(double firstGross, double secondGross) {
+        double combinedGross = firstGross + secondGross;
         
         // Applies the first three deductions to monthly basic salary (methods for each respective calculations are called)
-        double sssDeduction = calculateSSS(monthlyBasicSalary);
-        double philHealthDeduction = calculatePHCont(monthlyBasicSalary);
-        double pagIbigDeduction = calculatePagIbig(monthlyBasicSalary);
+        double sss = calculateSSS(combinedGross);
+        double philHealth = calculatePHCont(combinedGross);
+        double pagIbig = calculatePagIbig(combinedGross);
 
         // Adds up deductions before tax to calculate withholding tax
-        double totalDeductionsBeforeTax = sssDeduction + philHealthDeduction + pagIbigDeduction;
-        double taxableIncomeComputed = monthlyBasicSalary - totalDeductionsBeforeTax;
+        double totalDeductionsBeforeTax = sss + philHealth + pagIbig;
+        double taxableIncomeComputed = combinedGross - totalDeductionsBeforeTax;
 
         // Calls the calculateWithholdingTax method to return the withholding tax value
         double withholdingTax = calculateWithholdingTax(taxableIncomeComputed);
        
-        // Sums up all deductions and subtracts it on gross pay (or basic salary for now)
-        double totalDeductions = sssDeduction + philHealthDeduction + pagIbigDeduction + withholdingTax;
-        double netPay = monthlyBasicSalary - totalDeductions;
+        // Sums up all deductions and subtracts it on gross pay (2nd cutoff total)
+        double totalDeductions = sss + philHealth + pagIbig + withholdingTax;
+        double netPay = combinedGross - totalDeductions;
+        
+        // Returns the values of deductions along with net pay for display.
+        return new double[] {netPay, totalDeductions, sss, philHealth, pagIbig, withholdingTax};
+    }    
+
+// == GOVERNMENT DEDUCTIONS == //   
     
     // Method that calculates SSS deductions    
-    
-public static double calculateSSS(double monthlyBasicSalary) {
+    public static double calculateSSS(double monthlyBasicSalary) {
 
     // List all SSS compensation ranges (upper limits)
         double[] compRange = {
