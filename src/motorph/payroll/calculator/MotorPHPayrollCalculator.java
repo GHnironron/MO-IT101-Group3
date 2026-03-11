@@ -27,7 +27,11 @@ public class MotorPHPayrollCalculator {
         payrollStaffMenu(sc);
     }
 }
+
+
+// == MENUS & LOGIN SCREEN == //
     
+// -Employee Menu- //    
     public static void employeeMenu(Scanner empMenu) {
         
         System.out.println("\nWelcome, MotorPH Employee!");
@@ -56,7 +60,8 @@ public class MotorPHPayrollCalculator {
             System.out.println("Program Terminated.");
         }
     }
-   
+
+// -Payroll Staff Menu- //   
     public static void payrollStaffMenu(Scanner staffMenu) {
         
         System.out.println("\nWelcome, MotorPH Payroll Staff!");
@@ -73,7 +78,8 @@ public class MotorPHPayrollCalculator {
             System.out.println("Program Terminated.");
         }
     }
-    
+
+// -Login Screen- //    
     public static String userLogin(Scanner login) {
         
         System.out.println("Welcome to MotorPH Portal!");
@@ -91,7 +97,8 @@ public class MotorPHPayrollCalculator {
         System.out.println("Invalid username and/or password.");
         return null;
     }
-    
+
+// -Process Payroll Sub-menu (From Payroll Staff Menu)- //    
     public static void processPayrollMenu (Scanner processPayroll) {
         
         System.out.println("\n1. One employee");
@@ -111,14 +118,23 @@ public class MotorPHPayrollCalculator {
         }
 
     }
-    
+
+
+// == PROCESS & DISPLAY ONE/ALL EMPLOYEE DETAILS == //
+
+// -Individual- //  
     public static void processOneEmployee(Scanner oneEmpProcess) {
         
     }
-    
+
+// -All- //    
     public static void processAllEmployees(Scanner allEmpProcess) {
         
     }
+
+
+// == READ CSV FILES == //
+
     
     public static String[] readEmployeeDetails(String inputEmpID) {
         
@@ -149,6 +165,7 @@ public class MotorPHPayrollCalculator {
         }
         return null;
     }
+
     
     public static double[] readEmployeeAttendance(String empID, int month) {
         
