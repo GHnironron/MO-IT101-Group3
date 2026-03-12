@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.Duration;
+import java.time.Month;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
@@ -15,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 
 public class MotorPHPayrollCalculator {
     public static void main(String[] args) {
-    
+
     Scanner sc = new Scanner(System.in);
     
     String user = userLogin(sc);
@@ -30,6 +31,7 @@ public class MotorPHPayrollCalculator {
 
 
 // == MENUS & LOGIN SCREEN == //
+
     
 // -Employee Menu- //    
     public static void employeeMenu(Scanner empMenu) {
@@ -43,7 +45,7 @@ public class MotorPHPayrollCalculator {
         empMenu.nextLine();
         
         if (option == 1) {
-            System.out.print("Enter employee number: ");
+            System.out.print("Enter employee number(10001-10034): ");
             String empNum = empMenu.nextLine();
             
             String [] emp = readEmployeeDetails(empNum);
@@ -53,9 +55,11 @@ public class MotorPHPayrollCalculator {
                 return;
             }
             
-            System.out.println("\nEmployee Number: " + emp[0]);
+            System.out.println("\n==============================");
+            System.out.println("Employee Number: " + emp[0]);
             System.out.println("Employee Name: " + emp[1] + " " + emp [2]);
             System.out.println("Birthday: " + emp[3]);
+            System.out.println("==============================");
         } else {
             System.out.println("Program Terminated.");
         }
@@ -122,17 +126,137 @@ public class MotorPHPayrollCalculator {
 
 // == PROCESS & DISPLAY ONE/ALL EMPLOYEE DETAILS == //
 
+    
 // -Individual- //  
     public static void processOneEmployee(Scanner oneEmpProcess) {
+        System.out.print("Enter Employee #: ");
+        String empNo = oneEmpProcess.nextLine();
         
+        String[] emp = readEmployeeDetails(empNo);
+        if (emp == null) {
+            System.out.println("Invalid Employee #.");
+            return;
+        }
+        
+        double rate = Double.parseDouble(emp[5].replace(",", "").replace("\"", "").trim());
+        
+        System.out.println("\n===================================");
+        System.out.println("Employee #   : " + emp[0]);
+        System.out.println("Employee Name: " + emp[2] + ", " + emp[1]);
+        System.out.println("Birthday     : " + emp[3]);
+        System.out.println("======================================");
+        
+        for(int month = 6; month <= 12; month++) {
+            double firstGross = computeGrossPay(empNo, month, true, rate);
+            double secondGross = computeGrossPay(empNo, month, false, rate);
+            
+            double[] result = computeNetPay(firstGross, secondGross);
+            
+            double netPay = result[0];
+            double totalDeductions = result[1];
+            double sss = result[2];
+            double philHealth = result[3];
+            double pagIbig = result[4];
+            double withHoldingTax = result[5];
+            
+            String monthName = getMonthName(month);
+            int days = YearMonth.of(2024, month).lengthOfMonth();
+            
+            System.out.println("Cutoff Date: " + monthName + " 1 to 15");
+            System.out.println("Gross Salary: " + firstGross);
+
+            System.out.println("\nCutoff Date: " + monthName + " 16 to " + days);
+            System.out.println("Gross Salary: " + secondGross);
+            System.out.println("Deductions:");
+            System.out.println("  SSS       : " + sss);
+            System.out.println("  PhilHealth: " + philHealth);
+            System.out.println("  Pag-IBIG  : " + pagIbig);
+            System.out.println("  Tax       : " + withHoldingTax);
+            System.out.println("Total Deduction: " + totalDeductions);
+            System.out.println("Net Salary     : " + netPay);
+        }
     }
 
 // -All- //    
     public static void processAllEmployees(Scanner allEmpProcess) {
         
+        String empDetails = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Employee Details.csv";        
+        try (BufferedReader br = new BufferedReader(new FileReader(empDetails))) {
+            br.readLine();
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                String[] data = line.split(",");
+                String empNo = data[0];
+                String firstName = data[2];
+                String lastName = data[1];
+                String birthDay = data[3];
+
+                double rate = Double.parseDouble(
+                    data[18].replace(",", "").replace("\"", "").trim()
+                );
+
+            System.out.println("===================================");
+            System.out.println("Employee #   : " + empNo);
+            System.out.println("Employee Name: " + lastName + ", " + firstName);
+            System.out.println("Birthday     : " + birthDay);
+            System.out.println("===================================");
+
+            for (int month = 6; month <= 12; month++) {
+
+                double firstGross = computeGrossPay(empNo, month, true, rate);
+                double secondGross = computeGrossPay(empNo, month, false, rate);
+
+                double[] result = computeNetPay(firstGross, secondGross);
+
+                double netPay = result[0];
+                double totalDeductions = result[1];
+                double sss = result[2];
+                double philHealth = result[3];
+                double pagIbig = result[4];
+                double withHoldingTax = result[5];
+
+                String monthName = getMonthName(month);
+                int days = YearMonth.of(2024, month).lengthOfMonth();
+
+                System.out.println("\nCutoff Date: " + monthName + " 1 to 15");
+                System.out.println("Gross Salary: " + firstGross);
+
+                System.out.println("\nCutoff Date: " + monthName + " 16 to " + days);
+                System.out.println("Gross Salary: " + secondGross);
+                System.out.println("Deductions:");
+                System.out.println("  SSS       : " + sss);
+                System.out.println("  PhilHealth: " + philHealth);
+                System.out.println("  Pag-IBIG  : " + pagIbig);
+                System.out.println("  Tax       : " + withHoldingTax);
+                System.out.println("Total Deduction: " + totalDeductions);
+                System.out.println("Net Salary     : " + netPay);
+            }
+        }
+    } catch (Exception e) {
+        System.out.println("Error processing all employees.");
     }
+} 
+    
 
-
+// -Misc: Converts month number to name- //
+    public static String getMonthName(int monthName) {
+        
+        return switch (monthName) {
+            case 6 -> "June";
+            case 7 -> "July";
+            case 8 -> "August";
+            case 9 -> "September";
+            case 10 -> "October";
+            case 11 -> "November";
+            case 12 -> "December";
+            default -> "Month " + monthName;
+        };
+    }
+    
+    
 // == READ CSV FILES == //
 
     
@@ -166,7 +290,7 @@ public class MotorPHPayrollCalculator {
         return null;
     }
 
-    
+
     public static double[] readEmployeeAttendance(String empID, int month) {
         
         String empAttendance = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Attendance Record.csv";
@@ -183,18 +307,18 @@ public class MotorPHPayrollCalculator {
                 if (line.trim().isEmpty()) continue;
                 
                 String[] data = line.split(",");
-                if (!data[0].equals(empID)) continue;
-                
+                if (!data.equals(empID)) continue;
+        
                 String[] dateParts = data [3].split("/");
-                int recordMonth = Integer.parseInt(dateParts[0]);
+                int attMonth = Integer.parseInt(dateParts[0]);
                 int day = Integer.parseInt(dateParts[1]);
                 int year = Integer.parseInt(dateParts[2]);
                 
-                if (year != 2024 || recordMonth != month) continue;
+                if (year != 2024 || attMonth != month) continue;
                 
                 LocalTime login = LocalTime.parse(data[4].trim(), timeFormat);
                 LocalTime logout = LocalTime.parse(data[5].trim(), timeFormat);
-                
+
                 double hours = calculateHoursWorked(login, logout);
                 
                 if (day <= 15) firstCutOff += hours;
@@ -203,6 +327,8 @@ public class MotorPHPayrollCalculator {
         }   catch (IOException e) {
             System.out.println("Error reading attendance file: " + month);
         }
+
+        return new double[] {firstCutOff, secondCutOff};
     }
 
     
@@ -380,6 +506,9 @@ public class MotorPHPayrollCalculator {
         // Returns the value of calculated withholding tax
         return withTax;
     }
+
 }
+
+
 
     
