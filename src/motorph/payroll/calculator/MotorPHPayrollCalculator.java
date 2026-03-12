@@ -174,6 +174,8 @@ public class MotorPHPayrollCalculator {
             System.out.println("  Tax       : " + withHoldingTax);
             System.out.println("Total Deduction: " + totalDeductions);
             System.out.println("Net Salary     : " + netPay);
+            
+            System.out.println("------------------------------");
         }
     }
 
