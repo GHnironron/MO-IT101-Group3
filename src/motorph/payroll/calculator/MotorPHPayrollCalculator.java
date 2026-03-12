@@ -223,7 +223,7 @@ public class MotorPHPayrollCalculator {
                 String monthName = getMonthName(month);
                 int days = YearMonth.of(2024, month).lengthOfMonth();
 
-                System.out.println("\nCutoff Date: " + monthName + " 1 to 15");
+                System.out.println("Cutoff Date: " + monthName + " 1 to 15");
                 System.out.println("Gross Salary: " + firstGross);
 
                 System.out.println("\nCutoff Date: " + monthName + " 16 to " + days);
@@ -235,6 +235,8 @@ public class MotorPHPayrollCalculator {
                 System.out.println("  Tax       : " + withHoldingTax);
                 System.out.println("Total Deduction: " + totalDeductions);
                 System.out.println("Net Salary     : " + netPay);
+                
+                System.out.println("------------------------------");
             }
         }
     } catch (Exception e) {
@@ -261,7 +263,7 @@ public class MotorPHPayrollCalculator {
     
 // == READ CSV FILES == //
 
-    
+// -Reads Employee Details- //    
     public static String[] readEmployeeDetails(String inputEmpID) {
         
         String empDetails = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Employee Details.csv";
@@ -292,7 +294,7 @@ public class MotorPHPayrollCalculator {
         return null;
     }
 
-
+// -Reads Employee Attendance- //
     public static double[] readEmployeeAttendance(String empID, int month) {
         
         String empAttendance = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Attendance Record.csv";
@@ -300,37 +302,60 @@ public class MotorPHPayrollCalculator {
         double secondCutOff = 0.00;
         
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("H:mm");
-        
+    
         try (BufferedReader br = new BufferedReader(new FileReader(empAttendance))) {
-            br.readLine(); // Skips the header
+            br.readLine(); // Skip header
             String line;
-                   
-            while ((line = br.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
+
+        while ((line = br.readLine()) != null) {
+            // Skip empty lines
+            if (line.trim().isEmpty()) continue;
+
+            String[] data = line.split(",");
+
+            // Validate we have all required columns
+            if (data.length < 6) continue;
+
+            // Trim the employee ID and compare (THIS IS KEY!)
+            if (!data[0].trim().equals(empID.trim())) continue;
+
+            try {
+                // Parse the date from column 3 (M/D/YYYY format)
+                String[] dateParts = data[3].trim().split("/");
                 
-                String[] data = line.split(",");
-                if (!data.equals(empID)) continue;
-        
-                String[] dateParts = data [3].split("/");
-                int attMonth = Integer.parseInt(dateParts[0]);
+                if (dateParts.length != 3) continue;
+                
+                int recordMonth = Integer.parseInt(dateParts[0]);
                 int day = Integer.parseInt(dateParts[1]);
                 int year = Integer.parseInt(dateParts[2]);
-                
-                if (year != 2024 || attMonth != month) continue;
-                
+
+                // Only process records for the specified month and year
+                if (year != 2024 || recordMonth != month) continue;
+
+                // Parse login and logout times
                 LocalTime login = LocalTime.parse(data[4].trim(), timeFormat);
                 LocalTime logout = LocalTime.parse(data[5].trim(), timeFormat);
 
+                // Calls the hours worked calculation method
                 double hours = calculateHoursWorked(login, logout);
-                
-                if (day <= 15) firstCutOff += hours;
-                else secondCutOff += hours;
-            }    
-        }   catch (IOException e) {
-            System.out.println("Error reading attendance file: " + month);
-        }
 
-        return new double[] {firstCutOff, secondCutOff};
+                // Add to the appropriate cutoff period
+                if (day <= 15) {
+                    firstCutOff += hours;
+                } else {
+                    secondCutOff += hours;
+                }
+                
+            } catch (Exception e) {
+                // Skip records with parsing errors silently
+                continue;
+            }
+        }
+    } catch (IOException e) {
+        System.out.println("Error reading attendance file.");
+    }
+    
+    return new double[] {firstCutOff, secondCutOff};
     }
 
     
@@ -343,10 +368,16 @@ public class MotorPHPayrollCalculator {
         LocalTime login = LocalTime.of(8, 0);
         LocalTime logout = LocalTime.of(17, 0);
     
+    // If logged in before 8 AM, login is 8 AM by default
         if (timeIn.isBefore(login)) timeIn = login;
+    
+    // If logged in after 5 PM, no hours credited.  
         if (timeIn.isAfter(logout)) return 0.0;
-        
+    
+    // If logged out after 5 PM, logout is 5 PM by default    
         if (timeOut.isAfter(logout)) timeOut = logout;
+    
+    // If logged out before 8 AM, no hours credited.   
         if (timeOut.isBefore(login)) return 0.0;
         
     // Calculates the total duration between login and logout   
@@ -363,9 +394,9 @@ public class MotorPHPayrollCalculator {
     
     // Gross Pay according to hours worked
         return hours * rate;        
-    }
-    
+    } 
     public static double computeGrossPay(String empNo, int month, boolean firstCutOff, double rate) {
+    
     // Reads attendance hours for selected cutoffs
         double [] cutOffs = readEmployeeAttendance(empNo, month);
         
@@ -375,12 +406,22 @@ public class MotorPHPayrollCalculator {
         } else {
             hours = cutOffs[1];     // Total Hours for 16-end of cutoff
         }
-        return calculateGrossPay(hours, rate);
+        
+        if (hours > 0) {
+            return calculateGrossPay(hours, rate);
+        }
+        
+        return 0.0;
     }
 
 // -Net Pay Calculation- //        
     public static double[] computeNetPay(double firstGross, double secondGross) {
         double combinedGross = firstGross + secondGross;
+        
+        // Ensures minimum gross pay
+        if (combinedGross <= 0) {
+            return new double[] {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        }
         
         // Applies the first three deductions to monthly basic salary (methods for each respective calculations are called)
         double sss = calculateSSS(combinedGross);
@@ -397,6 +438,10 @@ public class MotorPHPayrollCalculator {
         // Sums up all deductions and subtracts it on gross pay (2nd cutoff total)
         double totalDeductions = sss + philHealth + pagIbig + withholdingTax;
         double netPay = combinedGross - totalDeductions;
+        
+        if (netPay < 0) {
+            System.out.println("Invalid Net Pay Calculation Detected.");
+        }
         
         // Returns the values of deductions along with net pay for display.
         return new double[] {netPay, totalDeductions, sss, philHealth, pagIbig, withholdingTax};
