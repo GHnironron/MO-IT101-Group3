@@ -10,7 +10,8 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
 /**
- *
+ *MotorPH Payroll Calculator
+ * 
  * @author RJflores
  */
 
@@ -35,26 +36,31 @@ public class MotorPHPayrollCalculator {
     
 // -Employee Menu- //    
     public static void employeeMenu(Scanner empMenu) {
-        
+    
+        // Displays employee menu and allows employees to prompt an option
         System.out.println("\nWelcome, MotorPH Employee!");
         System.out.println("\n1. Enter employee ID");
         System.out.println("2. Exit");
         
+        // Reads the user prompt with scanner class
         System.out.print("Pick Option: ");
         int option = empMenu.nextInt();
         empMenu.nextLine();
         
+        // Conditional statement that prompts the user to enter their employee ID
         if (option == 1) {
             System.out.print("Enter employee number(10001-10034): ");
             String empNum = empMenu.nextLine();
-            
+        
+        // Calls the readEmployeeDetails method to display specific employee ID's basic info
             String [] emp = readEmployeeDetails(empNum);
             
             if (emp == null) {
                 System.out.println("Invalid employee number.");
                 return;
             }
-            
+        
+        // Displays employee basic info by reading the CSV file's respective index    
             System.out.println("\n==============================");
             System.out.println("Employee Number: " + emp[0]);
             System.out.println("Employee Name: " + emp[1] + " " + emp [2]);
@@ -68,14 +74,17 @@ public class MotorPHPayrollCalculator {
 // -Payroll Staff Menu- //   
     public static void payrollStaffMenu(Scanner staffMenu) {
         
+        // Displays payroll staff menu and allows staff to prompt an option
         System.out.println("\nWelcome, MotorPH Payroll Staff!");
         System.out.println("\n1. Process Payroll");
         System.out.println("2. Exit");
         
+        // Reads the user prompt with scanner class
         System.out.print("Pick Option: ");
         int option = staffMenu.nextInt();
         staffMenu.nextLine();
         
+        // Calls the processPayrollMenu method if option 1 is picked, otherwise it terminates the program.
         if (option == 1) {
             processPayrollMenu(staffMenu);
         } else {
@@ -86,18 +95,22 @@ public class MotorPHPayrollCalculator {
 // -Login Screen- //    
     public static String userLogin(Scanner login) {
         
+        // Displays the login screen, prompting the user to login as employee or payroll staff.
         System.out.println("Welcome to MotorPH Portal!");
         System.out.print("Enter username (employee/payroll_staff): ");
         String username = login.nextLine();
         
+        // Prompts and scans the user to enter a password ("12345" in this case).
         System.out.print("Enter password: ");
         String password = login.nextLine();
         
+        // Conditional statements that classifies the user logged in as an employee or staff (and also to determine which menu to display).
         if ((username.equals("employee") || username.equals("payroll_staff"))
                 && password.equals("12345")) {
             return username;
         }    
         
+        // Prints invalid if user enters incorrect login credentials.
         System.out.println("Invalid username and/or password.");
         return null;
     }
@@ -105,14 +118,17 @@ public class MotorPHPayrollCalculator {
 // -Process Payroll Sub-menu (From Payroll Staff Menu)- //    
     public static void processPayrollMenu (Scanner processPayroll) {
         
+        // Displays options when processing payroll (one/all employees)
         System.out.println("\n1. One employee");
         System.out.println("2. All employees");
         System.out.println("3. Exit");
         
+        // Use of scanner class to indicate user prompt
         System.out.print("Pick Option: ");
         int option = processPayroll.nextInt();
         processPayroll.nextLine();
         
+        // Conditional statements that determine which payroll process method should be called as per user input
         if (option == 1) {
             processOneEmployee(processPayroll);
         } else if (option == 2) {
@@ -248,6 +264,7 @@ public class MotorPHPayrollCalculator {
 // -Misc: Converts month number to name- //
     public static String getMonthName(int monthName) {
         
+        // Switch statements that formats month numbers into names (June-December).
         return switch (monthName) {
             case 6 -> "June";
             case 7 -> "July";
@@ -263,12 +280,15 @@ public class MotorPHPayrollCalculator {
     
 // == READ CSV FILES == //
 
+    
 // -Reads Employee Details- //    
     public static String[] readEmployeeDetails(String inputEmpID) {
         
+        // Initiates the employee details csv as a variable for more readable code.
         String empDetails = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Employee Details.csv";
         String[] empData = new String[6];
         
+        // Reads employee details CSV file
         try (BufferedReader br = new BufferedReader(new FileReader(empDetails))) {   
             br.readLine();  // Skips the header
             String line;
@@ -279,7 +299,7 @@ public class MotorPHPayrollCalculator {
                 String[] data = line.split(",");
                 
                 if (data[0].equals(inputEmpID)) {
-                    empData[0] = data[0];   // ID
+                    empData[0] = data[0];   // Employee ID
                     empData[1] = data[2];   // First Name
                     empData[2] = data[1];   // Last Name
                     empData[3] = data[3];   // Birthday
@@ -297,14 +317,17 @@ public class MotorPHPayrollCalculator {
 // -Reads Employee Attendance- //
     public static double[] readEmployeeAttendance(String empID, int month) {
         
+        // Initiates employee attendance csv as variable for more readable code.
         String empAttendance = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Attendance Record.csv";
         double firstCutOff = 0.00;
         double secondCutOff = 0.00;
         
+        // Formats the attendance as hours:minutes for hours worked calculation purposes.
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("H:mm");
-    
+        
+        // Reads the attendance CSV file
         try (BufferedReader br = new BufferedReader(new FileReader(empAttendance))) {
-            br.readLine(); // Skip header
+            br.readLine(); // Skips the header
             String line;
 
         while ((line = br.readLine()) != null) {
