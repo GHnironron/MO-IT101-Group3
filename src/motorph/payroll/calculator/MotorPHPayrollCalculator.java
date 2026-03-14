@@ -120,7 +120,7 @@ public class MotorPHPayrollCalculator {
 // -Process Payroll Sub-menu (From Payroll Staff Menu)- //    
     public static void processPayrollMenu (Scanner processPayroll) {
         
-        // Displays options when processing payroll (one/all employees)
+        // Displays options when processing payroll (One/All employees)
         System.out.println("\n1. One employee");
         System.out.println("2. All employees");
         System.out.println("3. Exit");
