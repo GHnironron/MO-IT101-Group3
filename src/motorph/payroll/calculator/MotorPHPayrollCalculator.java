@@ -8,6 +8,8 @@ import java.time.Duration;
 import java.time.Month;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *MotorPH Payroll Calculator
@@ -145,29 +147,39 @@ public class MotorPHPayrollCalculator {
     
 // -Individual- //  
     public static void processOneEmployee(Scanner oneEmpProcess) {
+        
+        // Asks for specific employee ID input
         System.out.print("Enter Employee #: ");
         String empNo = oneEmpProcess.nextLine();
         
+        // Loads employee details from the CSV (returns null/invalid if not found)
         String[] emp = readEmployeeDetails(empNo);
         if (emp == null) {
             System.out.println("Invalid Employee #.");
             return;
         }
         
+        // Cleans and extracts the hourly rate of specific employee
         double rate = Double.parseDouble(emp[5].replace(",", "").replace("\"", "").trim());
         
+        // Displays employee information
         System.out.println("\n===================================");
         System.out.println("Employee #   : " + emp[0]);
         System.out.println("Employee Name: " + emp[2] + ", " + emp[1]);
         System.out.println("Birthday     : " + emp[3]);
         System.out.println("======================================");
         
+        // Loops through each month (from June to December 2024) to calculate payroll.
         for(int month = 6; month <= 12; month++) {
+            
+            // Calculates gross pay for the first and second cutoffs.
             double firstGross = computeGrossPay(empNo, month, true, rate);
             double secondGross = computeGrossPay(empNo, month, false, rate);
             
+            // Calls the computeNetPay method to apply deductions.
             double[] result = computeNetPay(firstGross, secondGross);
             
+            // Result array to extract all deduction values.
             double netPay = result[0];
             double totalDeductions = result[1];
             double sss = result[2];
@@ -175,9 +187,11 @@ public class MotorPHPayrollCalculator {
             double pagIbig = result[4];
             double withHoldingTax = result[5];
             
+            // Converts month number to name (calls the getMonthName method)
             String monthName = getMonthName(month);
             int days = YearMonth.of(2024, month).lengthOfMonth();
-            
+        
+            // Displays payroll information per cutoff period.
             System.out.println("Cutoff Date: " + monthName + " 1 to 15");
             System.out.println("Gross Salary: " + firstGross);
 
@@ -205,30 +219,42 @@ public class MotorPHPayrollCalculator {
 
             while ((line = br.readLine()) != null) {
                 if (line.trim().isEmpty()) continue;
-
-                String[] data = line.split(",");
+                
+                // Uses the parseCSVLine method to handle quoted fields (e.g., "90,000" being split into two columns because of line.split(","))
+                String[] data = parseCSVLine(line);
+                
+                // Validates that there are no more than 19 columns in the CSV file (0-18)
+                if (data.length < 19) continue;                
+                
+                // Extracts employee info from respective CSV columns
                 String empNo = data[0];
                 String firstName = data[2];
                 String lastName = data[1];
                 String birthDay = data[3];
-
+                
+                // Parses the hourly rate into a double for pay calculations (also removes commas and slashes).
                 double rate = Double.parseDouble(
                     data[18].replace(",", "").replace("\"", "").trim()
                 );
-
+            
+            // Displays employee information
             System.out.println("===================================");
             System.out.println("Employee #   : " + empNo);
             System.out.println("Employee Name: " + lastName + ", " + firstName);
             System.out.println("Birthday     : " + birthDay);
             System.out.println("===================================");
 
+            // Loops through each month (from June to December 2024) to calculate payroll.
             for (int month = 6; month <= 12; month++) {
-
+                    
+                // Calculates gross pay for the first and second cutoffs.
                 double firstGross = computeGrossPay(empNo, month, true, rate);
                 double secondGross = computeGrossPay(empNo, month, false, rate);
 
+                // Calls the computeNetPay method to apply deductions.
                 double[] result = computeNetPay(firstGross, secondGross);
 
+                // Result array to extract all deduction values.
                 double netPay = result[0];
                 double totalDeductions = result[1];
                 double sss = result[2];
@@ -236,9 +262,11 @@ public class MotorPHPayrollCalculator {
                 double pagIbig = result[4];
                 double withHoldingTax = result[5];
 
+                // Converts month number to name (calls the getMonthName method)
                 String monthName = getMonthName(month);
                 int days = YearMonth.of(2024, month).lengthOfMonth();
 
+                // Displays payroll information per cutoff period.
                 System.out.println("Cutoff Date: " + monthName + " 1 to 15");
                 System.out.println("Gross Salary: " + firstGross);
 
@@ -295,9 +323,19 @@ public class MotorPHPayrollCalculator {
             
             while ((line = br.readLine()) != null) {
                 if (line.trim().isEmpty()) continue;
+       
+                // Calls the parceCSVLine method to prevent column splits from commas
+                String[] data = parseCSVLine(line);
+                if (data.length < 19) continue;
                 
-                String[] data = line.split(",");
-                
+            /** DEBUG: Print first employee found to see actual columns
+            if (data[0].equals("10001")) {
+                System.out.println("DEBUG - Employee 10001 raw data:");
+                for (int i = 0; i < data.length; i++) {
+                    System.out.println("  [" + i + "] = " + data[i]);
+                }
+            }
+            **/    
                 if (data[0].equals(inputEmpID)) {
                     empData[0] = data[0];   // Employee ID
                     empData[1] = data[2];   // First Name
@@ -336,14 +374,14 @@ public class MotorPHPayrollCalculator {
 
             String[] data = line.split(",");
 
-            // Validate we have all required columns
+            // Validates the CSV columns
             if (data.length < 6) continue;
 
-            // Trim the employee ID and compare (THIS IS KEY!)
+            // Trim the employee ID and compare
             if (!data[0].trim().equals(empID.trim())) continue;
 
             try {
-                // Parse the date from column 3 (M/D/YYYY format)
+                // Parse the date from column 4 (M/D/YYYY format)
                 String[] dateParts = data[3].trim().split("/");
                 
                 if (dateParts.length != 3) continue;
@@ -381,6 +419,50 @@ public class MotorPHPayrollCalculator {
     return new double[] {firstCutOff, secondCutOff};
     }
 
+// -Parse CSV Line with Quoted Fields- //
+    public static String[] parseCSVLine(String line) {
+    
+        
+        List<String> result = new ArrayList<>();
+        StringBuilder field = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            if (inQuotes) {
+                if (c == '"') {
+                    // Check for escaped quote (two consecutive quotes)
+                    if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                        field.append('"');
+                        i++; // Skip next quote
+                    } else {
+                        // End of quoted field
+                        inQuotes = false;
+                    }
+                } else {
+                    field.append(c);
+                }
+            } else {
+                if (c == ',') {
+                    // Found delimiter - add field to result
+                    result.add(field.toString().trim());
+                    field = new StringBuilder();
+                } else if (c == '"') {
+                    // Start of quoted field
+                    inQuotes = true;
+                } else if (c != ' ' || field.length() > 0) {
+                    // Add character (skip leading spaces)
+                    field.append(c);
+                }
+            }
+        }
+    // Add last field
+    result.add(field.toString().trim());
+    
+    return result.toArray(new String[0]);
+}
+    
     
 // == HOURS, GROSS, & NET PAY CALCULATION == //
         
