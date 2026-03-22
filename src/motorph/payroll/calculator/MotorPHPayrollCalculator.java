@@ -9,6 +9,7 @@ import java.time.Month;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -40,7 +41,8 @@ public class MotorPHPayrollCalculator {
     public static void employeeMenu(Scanner empMenu) {
     
         // Displays employee menu and allows employees to prompt an option
-        System.out.println("\nWelcome, MotorPH Employee!");
+        System.out.println("===================================");
+        System.out.println("Welcome, MotorPH Employee!");
         System.out.println("\n1. Enter employee ID");
         System.out.println("2. Exit");
         
@@ -77,7 +79,8 @@ public class MotorPHPayrollCalculator {
     public static void payrollStaffMenu(Scanner staffMenu) {
         
         // Displays payroll staff menu and allows staff to prompt an option
-        System.out.println("\nWelcome, MotorPH Payroll Staff!");
+        System.out.println("===================================");
+        System.out.println("Welcome, MotorPH Payroll Staff!");
         System.out.println("\n1. Process Payroll");
         System.out.println("2. Exit");
         
@@ -120,8 +123,9 @@ public class MotorPHPayrollCalculator {
 // -Process Payroll Sub-menu (From Payroll Staff Menu)- //    
     public static void processPayrollMenu (Scanner processPayroll) {
         
-        // Displays options when processing payroll (One/All employees)
-        System.out.println("\n1. One employee");
+        // Displays options when processing payroll (One/All Employees)
+        System.out.println("\n===================================");
+        System.out.println("1. One employee");
         System.out.println("2. All employees");
         System.out.println("3. Exit");
         
@@ -132,11 +136,11 @@ public class MotorPHPayrollCalculator {
         
         // Conditional statements that determine which payroll process method should be called as per user input
         if (option == 1) {
-            processOneEmployee(processPayroll);
-        } else if (option == 2) {
-            processAllEmployees(processPayroll);
+            System.out.print("Enter Employee ID(10001-10034): ");
+            String employeeID = processPayroll.nextLine();
+            processEmployees(Collections.singletonList(employeeID));
         } else {
-            System.out.println("Program Terminated.");
+            processEmployees(null);
         }
 
     }
@@ -144,37 +148,66 @@ public class MotorPHPayrollCalculator {
 
 // == PROCESS & DISPLAY ONE/ALL EMPLOYEE DETAILS == //
 
-    
-// -Individual- //  
-    public static void processOneEmployee(Scanner oneEmpProcess) {
+// -Employees- //
+    public static void processEmployees(List<String> employeeIDs) {
         
-        // Asks for specific employee ID input
-        System.out.print("Enter Employee #: ");
-        String empNo = oneEmpProcess.nextLine();
+        // Initialized variable name for employee details CSV (for more readable code).
+        String empDetails = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Employee Details.csv";
         
-        // Loads employee details from the CSV (returns null/invalid if not found)
-        String[] emp = readEmployeeDetails(empNo);
-        if (emp == null) {
-            System.out.println("Invalid Employee #.");
-            return;
+        try (BufferedReader br = new BufferedReader(new FileReader(empDetails))) {
+            br.readLine(); // Skips header row
+            String line;
+            
+            // Reads each employee record from CSV file (different from readEmployeeDetails, which only returns ONE employee)
+            while ((line = br.readLine()) != null) {
+                
+                // Handles commas in numerical CSV values, preventing them from splitting into different indexes
+                String[] data = parseCSVLine(line);
+                
+                // Skips invalid rows
+                if (data.length < 19) continue;
+
+                String employeeID = data[0];
+                
+                // Filters specific employee ID (for processing ONE employee) and skips all employees
+                if (employeeIDs != null && !employeeIDs.contains(employeeID)) continue;
+                
+                // Read employee details again for display
+                String[] employeeData = readEmployeeDetails(employeeID);
+                
+                // Clean and parse hourly rate (removes commas & quotes)
+                double rate = Double.parseDouble(data[18].replace(",", "").replace("\"", ""));
+
+                displayEmployeeInfo(employeeData);
+
+                // Loops through work months & calls on the displayMonthlyPayroll method to indicate all cutoff periods.
+                for (int month = 6; month <= 12; month++) {
+                    displayMonthlyPayroll(employeeID, month, rate);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error processing employees.");
         }
-        
-        // Cleans and extracts the hourly rate of specific employee
-        double rate = Double.parseDouble(emp[5].replace(",", "").replace("\"", "").trim());
-        
-        // Displays employee information
-        System.out.println("\n===================================");
-        System.out.println("Employee #   : " + emp[0]);
-        System.out.println("Employee Name: " + emp[2] + ", " + emp[1]);
-        System.out.println("Birthday     : " + emp[3]);
-        System.out.println("======================================");
-        
-        // Loops through each month (from June to December 2024) to calculate payroll.
-        for(int month = 6; month <= 12; month++) {
+    }        
+
+
+// == REUSABLE METHODS == //
+
+// -Displays Basic Employee Details- //    
+    public static void displayEmployeeInfo(String[] employee) {
+        System.out.println("===================================");
+        System.out.println("Employee #   : " + employee[0]);
+        System.out.println("Employee Name: " + employee[2] + ", " + employee[1]);
+        System.out.println("Birthday     : " + employee[3]);
+        System.out.println("===================================");        
+    }
+
+// -Displays Payroll Summaries- //    
+    public static void displayMonthlyPayroll(String empID, int month, double rate) {
             
             // Calculates gross pay for the first and second cutoffs.
-            double firstGross = computeGrossPay(empNo, month, true, rate);
-            double secondGross = computeGrossPay(empNo, month, false, rate);
+            double firstGross = computeGrossPay(empID, month, true, rate);
+            double secondGross = computeGrossPay(empID, month, false, rate);
             
             // Calls the computeNetPay method to apply deductions.
             double[] result = computeNetPay(firstGross, secondGross);
@@ -205,91 +238,10 @@ public class MotorPHPayrollCalculator {
             System.out.println("Total Deduction: " + totalDeductions);
             System.out.println("Net Salary     : " + netPay);
             
-            System.out.println("------------------------------");
-        }
+            System.out.println("------------------------------");      
     }
-
-// -All- //    
-    public static void processAllEmployees(Scanner allEmpProcess) {
-        
-        String empDetails = "src/MotorPHEmployeeData/MotorPH_EmployeeData - Employee Details.csv";        
-        try (BufferedReader br = new BufferedReader(new FileReader(empDetails))) {
-            br.readLine();
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
-                
-                // Uses the parseCSVLine method to handle quoted fields (e.g., "90,000" being split into two columns because of line.split(","))
-                String[] data = parseCSVLine(line);
-                
-                // Validates that there are no more than 19 columns in the CSV file (0-18)
-                if (data.length < 19) continue;                
-                
-                // Extracts employee info from respective CSV columns
-                String empNo = data[0];
-                String firstName = data[2];
-                String lastName = data[1];
-                String birthDay = data[3];
-                
-                // Parses the hourly rate into a double for pay calculations (also removes commas and slashes).
-                double rate = Double.parseDouble(
-                    data[18].replace(",", "").replace("\"", "").trim()
-                );
-            
-            // Displays employee information
-            System.out.println("===================================");
-            System.out.println("Employee #   : " + empNo);
-            System.out.println("Employee Name: " + lastName + ", " + firstName);
-            System.out.println("Birthday     : " + birthDay);
-            System.out.println("===================================");
-
-            // Loops through each month (from June to December 2024) to calculate payroll.
-            for (int month = 6; month <= 12; month++) {
-                    
-                // Calculates gross pay for the first and second cutoffs.
-                double firstGross = computeGrossPay(empNo, month, true, rate);
-                double secondGross = computeGrossPay(empNo, month, false, rate);
-
-                // Calls the computeNetPay method to apply deductions.
-                double[] result = computeNetPay(firstGross, secondGross);
-
-                // Result array to extract all deduction values.
-                double netPay = result[0];
-                double totalDeductions = result[1];
-                double sss = result[2];
-                double philHealth = result[3];
-                double pagIbig = result[4];
-                double withHoldingTax = result[5];
-
-                // Converts month number to name (calls the getMonthName method)
-                String monthName = getMonthName(month);
-                int days = YearMonth.of(2024, month).lengthOfMonth();
-
-                // Displays payroll information per cutoff period.
-                System.out.println("Cutoff Date: " + monthName + " 1 to 15");
-                System.out.println("Gross Salary: " + firstGross);
-
-                System.out.println("\nCutoff Date: " + monthName + " 16 to " + days);
-                System.out.println("Gross Salary: " + secondGross);
-                System.out.println("Deductions:");
-                System.out.println("  SSS       : " + sss);
-                System.out.println("  PhilHealth: " + philHealth);
-                System.out.println("  Pag-IBIG  : " + pagIbig);
-                System.out.println("  Tax       : " + withHoldingTax);
-                System.out.println("Total Deduction: " + totalDeductions);
-                System.out.println("Net Salary     : " + netPay);
-                
-                System.out.println("------------------------------");
-            }
-        }
-    } catch (Exception e) {
-        System.out.println("Error processing all employees.");
-    }
-} 
     
-
-// -Misc: Converts month number to name- //
+// -Misc: Converts Month Number to Name- //
     public static String getMonthName(int monthName) {
         
         // Switch statements that formats month numbers into names (June-December).
