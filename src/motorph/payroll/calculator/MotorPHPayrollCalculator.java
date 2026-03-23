@@ -18,17 +18,22 @@ import java.util.List;
  */
 
 public class MotorPHPayrollCalculator {
-    public static void main(String[] args) {
 
-    Scanner sc = new Scanner(System.in);
+    // Payroll Calculator Entry Point: handles login and routes user to respective menus
+    public static void main(String[] args) {
     
-    String user = userLogin(sc);
+    // Adds a scanner object (userInput) for keyboard entry
+    Scanner userInput = new Scanner(System.in);
+    
+    // Calls and displays user login screen, asking user to login as employee or payroll staff
+    String user = userLogin(userInput);
     if (user == null) return;
     
+    // Redirects the user to main two menus (employee/payroll staff), depending on their login credentials.
     if (user.equals("employee")) {
-        employeeMenu(sc);
+        employeeMenu(userInput);
     } else if (user.equals("payroll_staff")) {
-        payrollStaffMenu(sc);
+        payrollStaffMenu(userInput);
     }
 }
 
@@ -88,7 +93,7 @@ public class MotorPHPayrollCalculator {
         int option = staffMenu.nextInt();
         staffMenu.nextLine();
         
-        // Calls the processPayrollMenu method if option 1 is picked, otherwise it terminates the program.
+        // Redirects payroll staff to process payroll sub-menu (option 1), otherwise the program gets terminated.
         if (option == 1) {
             processPayrollMenu(staffMenu);
         } else {
@@ -128,18 +133,22 @@ public class MotorPHPayrollCalculator {
         System.out.println("2. All employees");
         System.out.println("3. Exit");
         
-        // Use of scanner class to indicate user prompt
+        // Uses a scanner class to determine which process is chosen from user input.
         System.out.print("Pick Option: ");
         int option = processPayroll.nextInt();
         processPayroll.nextLine();
         
-        // Conditional statements that determine which payroll process method should be called as per user input
+        // If statements that processes ONE employee if option 1 is picked, otherwise processes all employees/terminates the program.
         if (option == 1) {
             System.out.print("Enter Employee ID(10001-10034): ");
             String employeeID = processPayroll.nextLine();
+        
+        // Returns only ONE list of elements from a specific employee (if option 1 is picked)
             processEmployees(Collections.singletonList(employeeID));
-        } else {
+        } else if (option == 2) {
             processEmployees(null);
+        } else {
+            System.out.println("Program Terminated.");
         }
 
     }
@@ -204,21 +213,21 @@ public class MotorPHPayrollCalculator {
     }
 
 // -Displays Payroll Summaries- //    
-    public static void displayMonthlyPayroll(String empID, int month, double rate) {
+    public static void displayMonthlyPayroll(String employeeID, int month, double rate) {
             
             // Calculates gross pay for the first and second cutoffs.
-            double firstGross = computeGrossPay(empID, month, true, rate);
-            double secondGross = computeGrossPay(empID, month, false, rate);
+            double firstGross = computeGrossPay(employeeID, month, true, rate);
+            double secondGross = computeGrossPay(employeeID, month, false, rate);
             
             // Calls the readEmployeeAttendance method to obtain employee's total hours worked per cutoff.
-            double[] hours = readEmployeeAttendance(empID, month);
+            double[] hours = readEmployeeAttendance(employeeID, month);
             double firstHours = hours[0];
             double secondHours = hours[1];
             
             // Calls the computeNetPay method to apply deductions.
             double[] result = computeNetPay(firstGross, secondGross);
             
-            // Result array to extract all deduction values.
+            // Result array to extract all deduction values (refer to computeNetPay method return values for indexes).
             double netPay = result[0];
             double totalDeductions = result[1];
             double sss = result[2];
@@ -289,14 +298,7 @@ public class MotorPHPayrollCalculator {
                 String[] data = parseCSVLine(line);
                 if (data.length < 19) continue;
                 
-            /** DEBUG: Print first employee found to see actual columns
-            if (data[0].equals("10001")) {
-                System.out.println("DEBUG - Employee 10001 raw data:");
-                for (int i = 0; i < data.length; i++) {
-                    System.out.println("  [" + i + "] = " + data[i]);
-                }
-            }
-            **/    
+                // Returns CSV employee details by assigning them into variable arrays.
                 if (data[0].equals(inputEmpID)) {
                     empData[0] = data[0];   // Employee ID
                     empData[1] = data[2];   // First Name
@@ -381,21 +383,27 @@ public class MotorPHPayrollCalculator {
     }
 
 // -Parse CSV Line with Quoted Fields- //
+    // This method safely parses CSV lines that contain: quoted fields, commas (,),
+    // escaped quotes(""), and leading/trailing spaces.
     public static String[] parseCSVLine(String line) {
     
-        
+        // Stores all prased fields
         List<String> result = new ArrayList<>();
+        
+        // Builds characters as a string & tracks if they were inside quoted fields
         StringBuilder field = new StringBuilder();
         boolean inQuotes = false;
-
+        
+        // Go through each character in the CSV
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
-
+            
+        // Checks if characters are inside quotes
             if (inQuotes) {
                 if (c == '"') {
                     // Check for escaped quote (two consecutive quotes)
                     if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
-                        field.append('"');
+                        field.append('"');  // Adds a literal quote
                         i++; // Skip next quote
                     } else {
                         // End of quoted field
@@ -403,10 +411,11 @@ public class MotorPHPayrollCalculator {
                     }
                 } else {
                     field.append(c);
-                }
+                } 
+        // Checks the rest of the characters with NO quotes
             } else {
                 if (c == ',') {
-                    // Found delimiter - add field to result
+                    // Commas outside quotes = field separators (as it should be in CSVs)
                     result.add(field.toString().trim());
                     field = new StringBuilder();
                 } else if (c == '"') {
@@ -418,9 +427,10 @@ public class MotorPHPayrollCalculator {
                 }
             }
         }
-    // Add last field
+    // Add last field after the loop ends
     result.add(field.toString().trim());
     
+    // Converts the CSV list to arrays
     return result.toArray(new String[0]);
 }
     
