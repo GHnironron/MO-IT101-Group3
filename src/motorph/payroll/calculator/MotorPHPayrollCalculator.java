@@ -5,7 +5,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.Duration;
-import java.time.Month;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -148,6 +147,7 @@ public class MotorPHPayrollCalculator {
 
 // == PROCESS & DISPLAY ONE/ALL EMPLOYEE DETAILS == //
 
+    
 // -Employees- //
     public static void processEmployees(List<String> employeeIDs) {
         
@@ -193,6 +193,7 @@ public class MotorPHPayrollCalculator {
 
 // == REUSABLE METHODS == //
 
+    
 // -Displays Basic Employee Details- //    
     public static void displayEmployeeInfo(String[] employee) {
         System.out.println("===================================");
@@ -208,6 +209,11 @@ public class MotorPHPayrollCalculator {
             // Calculates gross pay for the first and second cutoffs.
             double firstGross = computeGrossPay(empID, month, true, rate);
             double secondGross = computeGrossPay(empID, month, false, rate);
+            
+            // Calls the readEmployeeAttendance method to obtain employee's total hours worked per cutoff.
+            double[] hours = readEmployeeAttendance(empID, month);
+            double firstHours = hours[0];
+            double secondHours = hours[1];
             
             // Calls the computeNetPay method to apply deductions.
             double[] result = computeNetPay(firstGross, secondGross);
@@ -226,11 +232,14 @@ public class MotorPHPayrollCalculator {
         
             // Displays payroll information per cutoff period.
             System.out.println("Cutoff Date: " + monthName + " 1 to 15");
+            System.out.println("Total Hours Worked: " + firstHours);
             System.out.println("Gross Salary: " + firstGross);
 
             System.out.println("\nCutoff Date: " + monthName + " 16 to " + days);
+            System.out.println("Total Hours Worked: " + secondHours);
             System.out.println("Gross Salary: " + secondGross);
-            System.out.println("Deductions:");
+            
+            System.out.println("\nDeductions:");
             System.out.println("  SSS       : " + sss);
             System.out.println("  PhilHealth: " + philHealth);
             System.out.println("  Pag-IBIG  : " + pagIbig);
@@ -425,6 +434,11 @@ public class MotorPHPayrollCalculator {
         LocalTime login = LocalTime.of(8, 0);
         LocalTime logout = LocalTime.of(17, 0);
     
+    // Applies grace period (if within 10 minutes late, resets timer to 8:00AM)
+        if (timeIn.isAfter(login) && timeIn.isBefore(login.plusMinutes(10))) {
+            timeIn = login;
+        }
+        
     // If logged in before 8 AM, login is 8 AM by default
         if (timeIn.isBefore(login)) timeIn = login;
     
@@ -438,12 +452,13 @@ public class MotorPHPayrollCalculator {
         if (timeOut.isBefore(login)) return 0.0;
         
     // Calculates the total duration between login and logout   
-        Duration totalHours = Duration.between(timeIn, timeOut);
+        double hours = Duration.between(timeIn, timeOut).toMinutes() / 60;
     
-    // Converts the duration into a readable hour and minute format
-        long hours = totalHours.toHours();              // full hours worked
-        long minutes = totalHours.toMinutes() % 60;     // remaining minutes after hours
-        return hours + (minutes / 60.0);
+    // Lunch break deduction(1 hour)
+        if (hours > 5) hours -= 1;
+    
+    // Returns the value of total hours worked (with grace period + lunch break rule applied)
+        return Math.max(hours, 0);
     }
 
 // -Gross Pay Calculation- //
